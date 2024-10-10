@@ -576,7 +576,7 @@ bool DBConnector::SetIsolationLevel(SQLHDBC m_hDatabaseConnection, std::string o
         return true;
     }
 
-    if (db_type != "oracle" && db_type != "ob") {
+    if (db_type != "oracle" && db_type != "ob" && db_type != "dm8") {
     // for ob mysql mode
     // if (db_type != "oracle") {
         SQLRETURN ret;
@@ -624,7 +624,9 @@ bool DBConnector::SetIsolationLevel(SQLHDBC m_hDatabaseConnection, std::string o
     // and execute it using ExecWriteSql.
     else {
         std::string iso;
-        if (opt == "read-committed") {
+        if (opt == "read-uncommitted") {
+            iso = "read uncommitted";
+        } else if (opt == "read-committed") {
             iso = "read committed";
         } else if (opt == "repeatable-read") {
 	    iso = "repeatable read";
@@ -640,6 +642,8 @@ bool DBConnector::SetIsolationLevel(SQLHDBC m_hDatabaseConnection, std::string o
             sql = "alter session set isolation_level =" + iso;
         } else if (db_type == "ob") {
             sql = "set session transaction isolation level " + iso + ";";
+        } else if (db_type == "dm8") {
+            sql = "set transaction isolation level " + iso + ";";
         }
         if (!DBConnector::ExecWriteSql(1024, sql, test_result_set, session_id, test_process_file)) {
             return false;

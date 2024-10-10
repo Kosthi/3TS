@@ -258,6 +258,16 @@ bool MultiThreadExecution(std::vector<TxnSql>& txn_sql_list, TestSequence& test_
 
         // mutex_txn[txn_id]->unlock(); 
     }
+
+    // If the last SQL statement causes a transaction deadlock, roll back to interrupt the blocking of other transactions
+    if (FLAGS_db_type == "dm8") {
+      std::string ret_type = test_result_set.ResultType();
+      auto index_R = ret_type.find("Rollback");
+      if (index_R != ret_type.npos) {
+        db_connector.SQLEndTnx("rollback", txn_id, 1024, test_result_set, FLAGS_db_type, test_process_file);
+      }
+    }
+
     pthread_mutex_unlock(mutex_txn[txn_id]);
     return true;
 jump:
@@ -318,7 +328,7 @@ bool JobExecutor::ExecTestSequence(TestSequence& test_sequence, TestResultSet& t
     std::cout << " " << std::endl;
     test_process << " " << std::endl;
 
-    if (FLAGS_db_type != "oracle" && FLAGS_db_type != "ob") {
+    if (FLAGS_db_type != "oracle" && FLAGS_db_type != "ob" && FLAGS_db_type != "dm8") {
         test_process << "set TXN_ISOLATION = " + FLAGS_isolation + " for each session"<< std::endl;
     }
 
